@@ -10,6 +10,7 @@ members = [
     # internals
     "benches",
     "examples",
+    "e2e",
 ]
 
 [workspace.metadata]

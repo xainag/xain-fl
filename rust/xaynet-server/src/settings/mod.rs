@@ -592,7 +592,7 @@ pub struct MetricsSettings {
     pub influxdb: InfluxSettings,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, Clone)]
 /// InfluxDB settings.
 pub struct InfluxSettings {
     #[validate(url)]
@@ -629,7 +629,7 @@ pub struct InfluxSettings {
     pub db: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 /// Redis settings.
 pub struct RedisSettings {
     /// The URL where Redis is running.

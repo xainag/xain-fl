@@ -1,0 +1,40 @@
+[package]
+name = "e2e"
+version = "0.0.0"
+authors = ["Xayn Engineering <engineering@xaynet.dev>"]
+publish = false
+edition = "2018"
+description = "The Xayn Network project is building a privacy layer for machine learning so that AI projects can meet compliance such as GDPR and CCPA. The approach relies on Federated Learning as enabling technology that allows production AI applications to be fully privacy compliant."
+readme = "../../README.md"
+homepage = "https://xaynet.dev/"
+repository = "https://github.com/xaynetwork/xaynet/"
+license-file = "../../LICENSE"
+
+
+[package.metadata]
+# minimum supported rust version
+msrv = "1.46.0"
+
+[dependencies]
+async-trait = "0.1.42"
+anyhow = "1.0.38"
+futures = "0.3.12"
+serde = { version = "1.0.120", features = ["derive"] }
+serde_yaml = "0.8.15"
+tokio = { version = "0.2.24", features = ["full"] }
+reqwest = { version = "0.10.10", default-features = false, features = ["json", "gzip", "stream"] }
+xaynet-sdk = { path = "../xaynet-sdk", features = ["reqwest-client"] }
+xaynet-core = { path = "../xaynet-core" }
+xaynet-server = { path = "../xaynet-server", features = ["model-persistence"] }
+tracing = "0.1.22"
+tracing-subscriber = "0.2.15"
+config = "0.10.1"
+indicatif = "0.15.0"
+influxdb = "0.3.0"
+chrono = { version = "0.4.19" }
+toml = "0.5"
+kube = { version = "0.46.1" }
+kube-runtime  = { version = "0.46.1" }
+k8s-openapi = { version = "0.10.0", default-features = false, features = ["v1_16"] }
+serde_json = { version = "1.0.61" }
+console = "0.14"

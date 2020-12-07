@@ -205,7 +205,6 @@ mod message_encoder;
 pub mod settings;
 mod state_machine;
 mod traits;
-pub(crate) mod utils;
 
 pub(crate) use self::message_encoder::MessageEncoder;
 pub use self::traits::{ModelStore, Notify, XaynetClient};
