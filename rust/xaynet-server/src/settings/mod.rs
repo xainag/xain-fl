@@ -28,6 +28,11 @@ pub mod s3;
 #[cfg(feature = "model-persistence")]
 pub use self::{s3::RestoreSettings, s3::S3BucketsSettings, s3::S3Settings};
 
+#[cfg(feature = "iota")]
+pub mod iota;
+#[cfg(feature = "iota")]
+pub use self::iota::IotaSettings;
+
 #[derive(Error, Debug)]
 /// An error related to loading and validation of settings.
 pub enum SettingsError {
@@ -57,7 +62,7 @@ pub struct Settings {
     #[cfg(feature = "model-persistence")]
     #[validate]
     pub restore: RestoreSettings,
-    #[serde(default)]
+    #[cfg_attr(not(feature = "iota"), serde(default))]
     pub trust_anchor: TrustAnchorSettings,
 }
 
@@ -727,8 +732,14 @@ where
 
 #[derive(Debug, Deserialize, Validate)]
 /// Trust anchor settings.
-pub struct TrustAnchorSettings {}
+pub struct TrustAnchorSettings {
+    #[cfg(feature = "iota")]
+    #[validate]
+    /// Settings for the IOTA backend.
+    pub iota: IotaSettings,
+}
 
+#[cfg(not(feature = "iota"))]
 // Default value for the global models bucket
 impl Default for TrustAnchorSettings {
     fn default() -> Self {

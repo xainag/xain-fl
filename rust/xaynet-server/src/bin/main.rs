@@ -15,6 +15,8 @@ use xaynet_server::{
     state_machine::StateMachineInitializer,
     storage::{coordinator_storage::redis, Storage, Store},
 };
+#[cfg(feature = "iota")]
+use xaynet_server::{settings::IotaSettings, storage::trust_anchor::iota::IotaClient};
 #[cfg(feature = "model-persistence")]
 use xaynet_server::{settings::S3Settings, storage::model_storage::s3};
 
@@ -58,6 +60,8 @@ async fn main() {
         redis_settings,
         #[cfg(feature = "model-persistence")]
         settings.s3,
+        #[cfg(feature = "iota")]
+        settings.trust_anchor.iota,
     )
     .await;
 
@@ -111,6 +115,7 @@ fn init_metrics(settings: InfluxSettings) {
 async fn init_store(
     redis_settings: RedisSettings,
     #[cfg(feature = "model-persistence")] s3_settings: S3Settings,
+    #[cfg(feature = "iota")] iota_settings: IotaSettings,
 ) -> impl Storage {
     let coordinator_store = redis::Client::new(redis_settings.url)
         .await
@@ -131,6 +136,16 @@ async fn init_store(
             s3
         }
     };
+    #[cfg(not(feature = "iota"))]
+    {
+        Store::new(coordinator_store, model_store)
+    }
 
-    Store::new(coordinator_store, model_store)
+    #[cfg(feature = "iota")]
+    {
+        let trust_anchor = IotaClient::new(iota_settings)
+            .await
+            .expect("failed to create trust anchor");
+        Store::new_with_trust_anchor(coordinator_store, model_store, trust_anchor)
+    }
 }

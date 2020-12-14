@@ -46,3 +46,12 @@ region = ["minio", "http://localhost:9000"]
 
 [restore]
 enable = true
+
+[trust_anchor.iota]
+url = "https://nodes.devnet.iota.org:443"
+network = "Devnet"
+author_seed = "XAYN9IOTA9AUTHOR9SEED999"
+author_state_pwd = "xaynet_iota_test_password"
+
+[trust_anchor.iota.store]
+url = "redis://127.0.0.1/"

@@ -167,7 +167,7 @@ where
     T: Storage,
 {
     /// The private state.
-    pub(in crate::state_machine) private: S,
+    pub(in crate::state_machine) private: State,
     /// The shared coordinator state and I/O interfaces.
     pub(in crate::state_machine) shared: Shared<T>,
 }
