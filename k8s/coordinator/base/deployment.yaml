@@ -29,6 +29,8 @@ spec:
                   key: redis-password
             - name: XAYNET_REDIS__URL
               value: "redis://:$(REDIS_AUTH)@redis-master"
+            - name: XAYNET_TRUST_ANCHOR__IOTA__STORE__URL
+              value: "redis://:$(REDIS_AUTH)@redis-master"
             - name: XAYNET_S3__ACCESS_KEY
               valueFrom:
                 secretKeyRef:
