@@ -365,7 +365,6 @@ mod tests {
             [trust_anchor.iota]
             url = "https://nodes.devnet.iota.org:443"
             network = "Devnet"
-            local_pow = false
             author_seed = "XAYN9IOTA9AUTHOR9SEED999"
             author_state_pwd = "xaynet_iota_test_password"
 

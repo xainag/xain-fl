@@ -740,7 +740,7 @@ pub struct TrustAnchorSettings {
 }
 
 #[cfg(not(feature = "iota"))]
-// Default value for the global models bucket
+// Default value for trust anchor settings.
 impl Default for TrustAnchorSettings {
     fn default() -> Self {
         Self {}

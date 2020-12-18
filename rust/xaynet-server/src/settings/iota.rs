@@ -85,6 +85,7 @@ pub struct IotaSettings {
 }
 
 #[derive(Debug, Deserialize)]
+/// Redis store settings.
 pub struct RedisStoreSettings {
     /// The URL where Redis is running.
     ///
