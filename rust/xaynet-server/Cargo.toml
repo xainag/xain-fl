@@ -80,7 +80,7 @@ warp = "0.2.5"
 xaynet-core = { path = "../xaynet-core", version = "0.2.0" }
 
 # feature: iota
-iota-streams = { git = "https://github.com/iotaledger/streams", rev  = "50fd5da4415a9c454fed724a635c97195752422c", optional = true}
+iota-streams = { git = "https://github.com/iotaledger/streams", branch  = "develop", optional = true }
 iota-core = { git = "https://github.com/iotaledger/iota.rs", branch = "iota-1.0", optional = true }
 regex = { version = "1.4.2", optional = true }
 
