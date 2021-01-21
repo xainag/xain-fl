@@ -1,7 +1,7 @@
 //! # IOTA trust anchor integration
 //!
 //! To fight against AI misuse the coordinator signs the hash of the decrypted aggregated global
-//! model and publish it to the IOTA Tangle. The hash is calculated from the `bincode` encoded
+//! model and publishes it to the IOTA Tangle. The hash is calculated from the `bincode` encoded
 //! model. It is the same encoding that is sent to the user via the API.
 //!
 //! ```ignore
