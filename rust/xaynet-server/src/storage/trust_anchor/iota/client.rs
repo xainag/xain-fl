@@ -63,7 +63,7 @@
 //! announcement message because we always save the state after sending the
 //! announcement message.
 //! However, we can never be sure that the status returned by the `AuthorStore` is the latest state,
-//! as the coordinator between the sending and saving methods could have crashed.
+//! as the coordinator could have crashed between the sending and saving methods.
 //!
 //! ### Caveat
 //!
