@@ -36,7 +36,7 @@
 //! to check if the message exists in the tangle. We only have the `send_announce` method
 //! to choose from. However, this method always creates and sends an announcement message
 //! in one step. That means that in the end there could be multiple announcement messages with
-//! the same id. Obviously that's not ok but I don't how we could fix it on our site.
+//! the same id. Obviously that's not ok but I don't how we could fix it on our side.
 //!
 //! ### Side note
 //!
