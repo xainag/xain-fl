@@ -20,7 +20,7 @@
 //! // create a channel by sending an announcement message.
 //! let announcement_msg_id = author.send_announce().unwrap();
 //!
-//! // send fist message / link it to the announcement message
+//! // send first message / link it to the announcement message
 //! let (msg_id, seq) = author.send_signed_packet(&announcement_msg_id, &public_payload, &Bytes::new());
 //!
 //! // send second message / link it to the first message
