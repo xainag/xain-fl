@@ -34,7 +34,7 @@
 //! Currently there is no way to check if the announcement message has already been sent.
 //! It is not possible to just create the announcement message ID which we could use
 //! to check if the message exists in the tangle. We only have the `send_announce` method
-//! to choose from, however, this method always creates and sends a announcement message
+//! to choose from. However, this method always creates and sends an announcement message
 //! in one step. That means that in the end there could be multiple announcement messages with
 //! the same id. Obviously that's not ok but I don't how we could fix it on our site.
 //!
