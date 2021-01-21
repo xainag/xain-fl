@@ -51,7 +51,7 @@
 //! Since `gen_next_msg_ids` returns the current message ID + the sequence number we can
 //! check whether at least one message has already been sent.
 //!
-//! To be more precisely:
+//! To be more precise:
 //! If the sequence number is greater than one, we know that at least one signed message
 //! has already been sent. If the sequence number is one, we know that no signed message has
 //! been sent yet, however, we do not know whether the announcement message has already
