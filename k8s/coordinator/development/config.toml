@@ -58,6 +58,6 @@ author_state_pwd = "xaynet_iota_test_password"
 
 [trust_anchor.iota.store]
 # The url is configured via the environment variable `XAYNET_TRUST_ANCHOR__IOTA__STORE__URL`.
-# `XAYNET_TRUST_ANCHOR__IOTA__STORE__URL` depends on the enviroment variable `REDIS_AUTH`,
+# `XAYNET_TRUST_ANCHOR__IOTA__STORE__URL` depends on the environment variable `REDIS_AUTH`,
 # which is defined as a Kubernetes secret and exposed to the coordinator pod.
 # See: k8s/coordinator/base/deployment.yaml
