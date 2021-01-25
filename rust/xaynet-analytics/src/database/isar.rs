@@ -48,7 +48,7 @@ impl IsarDb {
         unimplemented!()
     }
 
-    pub fn put(&self, collection_name: &str, object: &[u8]) -> Result<(), Error> {
+    pub fn put(&self, collection_name: &str, object: &[u8]) -> Result<String, Error> {
         self.get_collection(collection_name)?
             .put(&self.begin_txn(false)?, None, object)
             .map_err(|_| {
@@ -58,7 +58,7 @@ impl IsarDb {
                     collection_name
                 )
             })
-            .map(|_| ())
+            .map(|object_id| object_id.to_string())
     }
 
     pub fn get_object_builder(&self, collection_name: &str) -> Result<ObjectBuilder, Error> {
@@ -100,7 +100,7 @@ fn get_collection_schema(
 ) -> Result<CollectionSchema, Error> {
     field_properties.try_fold(CollectionSchema::new(&name), |mut schema, prop| {
         schema
-            .add_property(prop.name, prop.data_type)
+            .add_property(&prop.name, prop.data_type)
             .map_err(|_| {
                 anyhow!(
                     "failed to add property {} to collection {}",
@@ -109,7 +109,7 @@ fn get_collection_schema(
                 )
             })?;
         schema
-            .add_index(&[prop.name], prop.is_unique, prop.has_hash_value)
+            .add_index(&[&prop.name], prop.is_unique, prop.has_hash_value)
             .map_err(|_| {
                 anyhow!(
                     "failed to add index for {} to collection {}",

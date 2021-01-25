@@ -20,8 +20,8 @@ impl<'r> AnalyticsEventRepo<'r> {
     }
 }
 
-impl<'r> Repo<AnalyticsEvent> for AnalyticsEventRepo<'r> {
-    fn add(&self, event: AnalyticsEvent) -> Result<(), Error> {
+impl<'r, 'a> Repo<AnalyticsEvent<'a>> for AnalyticsEventRepo<'r> {
+    fn add(&self, event: &mut AnalyticsEvent) -> Result<(), Error> {
         let mut object_builder = self.db.get_object_builder(self.collection_name)?;
         event.write_with_object_builder(&mut object_builder);
         self.db
@@ -30,7 +30,7 @@ impl<'r> Repo<AnalyticsEvent> for AnalyticsEventRepo<'r> {
     }
 
     // TODO: return an iterator instead of Vec: https://xainag.atlassian.net/browse/XN-1517
-    fn get_all(&self) -> Result<Vec<AnalyticsEvent>, Error> {
+    fn get_all(&self) -> Result<Vec<AnalyticsEvent<'a>>, Error> {
         let _events_as_bytes = self.db.get_all_as_bytes(&self.collection_name)?;
 
         // TODO: not sure how to proceed to parse [u8] using the collection schema. didn't find examples in Isar
@@ -41,12 +41,12 @@ impl<'r> Repo<AnalyticsEvent> for AnalyticsEventRepo<'r> {
 
 pub struct MockAnalyticsEventRepo {}
 
-impl Repo<AnalyticsEvent> for MockAnalyticsEventRepo {
-    fn add(&self, _object: AnalyticsEvent) -> Result<(), Error> {
+impl<'a> Repo<AnalyticsEvent<'a>> for MockAnalyticsEventRepo {
+    fn add(&self, _object: &mut AnalyticsEvent) -> Result<(), Error> {
         Ok(())
     }
 
-    fn get_all(&self) -> Result<Vec<AnalyticsEvent>, Error> {
+    fn get_all(&self) -> Result<Vec<AnalyticsEvent<'a>>, Error> {
         Ok(Vec::new())
     }
 }

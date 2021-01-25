@@ -10,7 +10,7 @@ use crate::{
     database::analytics_event::data_model::AnalyticsEvent,
 };
 
-impl CalcWasActiveEachPastPeriod {
+impl<'a> CalcWasActiveEachPastPeriod<'a> {
     pub fn new(
         metadata: DataPointMetadata,
         events: Vec<AnalyticsEvent>,
@@ -45,7 +45,7 @@ impl CalcWasActiveEachPastPeriod {
     }
 }
 
-impl CalculateDataPoints for CalcWasActiveEachPastPeriod {
+impl<'a> CalculateDataPoints for CalcWasActiveEachPastPeriod<'a> {
     fn metadata(&self) -> DataPointMetadata {
         self.metadata
     }

@@ -10,7 +10,7 @@ pub trait IsarAdapter: Sized {
 }
 
 pub trait Repo<T> {
-    fn add(&self, object: T) -> Result<(), Error>;
+    fn add(&self, object: &mut T) -> Result<(), Error>;
 
     fn get_all(&self) -> Result<Vec<T>, Error>;
 }
@@ -30,7 +30,7 @@ impl IsarAdapter for MockObject {
 }
 
 impl Repo<MockObject> for MockRepo {
-    fn add(&self, _object: MockObject) -> Result<(), Error> {
+    fn add(&self, _object: &mut MockObject) -> Result<(), Error> {
         unimplemented!()
     }
 
@@ -40,7 +40,7 @@ impl Repo<MockObject> for MockRepo {
 }
 
 pub struct FieldProperty {
-    pub name: &'static str,
+    pub name: String,
     pub data_type: DataType,
     pub is_unique: bool,
     pub has_hash_value: bool,
@@ -48,7 +48,7 @@ pub struct FieldProperty {
 
 impl FieldProperty {
     pub fn new(
-        name: &'static str,
+        name: String,
         data_type: DataType,
         is_unique: Option<bool>,
         has_hash_value: Option<bool>,

@@ -7,13 +7,13 @@ use crate::{
     database::analytics_event::data_model::{AnalyticsEvent, AnalyticsEventType},
 };
 
-impl CalcScreenEnterCount {
+impl<'a> CalcScreenEnterCount<'a> {
     pub fn new(metadata: DataPointMetadata, events: Vec<AnalyticsEvent>) -> CalcScreenEnterCount {
         CalcScreenEnterCount { metadata, events }
     }
 }
 
-impl CalculateDataPoints for CalcScreenEnterCount {
+impl<'a> CalculateDataPoints for CalcScreenEnterCount<'a> {
     fn metadata(&self) -> DataPointMetadata {
         self.metadata
     }
@@ -33,7 +33,10 @@ mod tests {
     use chrono::{DateTime, Duration, Utc};
 
     use super::*;
-    use crate::data_combination::data_points::data_point::{Period, PeriodUnit};
+    use crate::{
+        data_combination::data_points::data_point::{Period, PeriodUnit},
+        database::screen_route::data_model::ScreenRoute,
+    };
 
     #[test]
     fn test_calculate_when_no_events() {
@@ -48,11 +51,12 @@ mod tests {
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let events = vec![AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(12),
-            "screen".to_string(),
+            Some(&screen_route),
         )];
         let screen_enter_count = CalcScreenEnterCount::new(metadata, events);
         assert_eq!(screen_enter_count.calculate(), vec![1]);
@@ -64,19 +68,19 @@ mod tests {
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
-        let screen_route = "home_screen".to_string();
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let events = vec![
             AnalyticsEvent::new(
                 "test1",
                 AnalyticsEventType::ScreenEnter,
                 end_period - Duration::hours(9),
-                screen_route.clone(),
+                Some(&screen_route),
             ),
             AnalyticsEvent::new(
                 "test2",
                 AnalyticsEventType::ScreenEnter,
                 end_period - Duration::hours(18),
-                screen_route,
+                Some(&screen_route),
             ),
         ];
         let screen_enter_count = CalcScreenEnterCount::new(metadata, events);

@@ -15,7 +15,8 @@ use crate::{
     },
     database::{
         analytics_event::data_model::AnalyticsEvent,
-        common::{MockObject, Repo},
+        common::Repo,
+        screen_route::data_model::ScreenRoute,
     },
 };
 
@@ -25,10 +26,10 @@ pub struct DataCombiner<E, S> {
     screen_routes_repo: S,
 }
 
-impl<E, S> DataCombiner<E, S>
+impl<'a, E, S> DataCombiner<E, S>
 where
-    E: Repo<AnalyticsEvent>,
-    S: Repo<MockObject>, /* TODO: implement ScreenRoute data model and its repo: https://xainag.atlassian.net/browse/XN-1520 */
+    E: Repo<AnalyticsEvent<'a>>,
+    S: Repo<ScreenRoute>,
 {
     pub fn new(events_repo: E, screen_routes_repo: S) -> Self {
         Self {
@@ -37,11 +38,10 @@ where
         }
     }
 
-    pub fn init_data_points(&self) -> Result<Vec<DataPoint>, Error> {
+    pub fn init_data_points(&self) -> Result<Vec<DataPoint<'a>>, Error> {
         let end_period = Utc::now();
         let events = self.events_repo.get_all()?;
-        // let screen_routes = self.screen_routes_repo.get_all()?;
-        let screen_routes: Vec<String> = Vec::new(); // placeholder until ScreenRoute model is implemented: https://xainag.atlassian.net/browse/XN-1520
+        let screen_routes = self.screen_routes_repo.get_all()?;
 
         let one_day_period_metadata =
             DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
@@ -79,9 +79,9 @@ where
     fn init_screen_active_time_vars(
         &self,
         metadata: DataPointMetadata,
-        events: Vec<AnalyticsEvent>,
-        screen_routes: &[String],
-    ) -> Vec<DataPoint> {
+        events: Vec<AnalyticsEvent<'a>>,
+        screen_routes: &[ScreenRoute],
+    ) -> Vec<DataPoint<'a>> {
         let mut screen_active_time_vars: Vec<DataPoint> = screen_routes
             .iter()
             .map(|route| {
@@ -103,9 +103,9 @@ where
     fn init_screen_enter_count_vars(
         &self,
         metadata: DataPointMetadata,
-        events: Vec<AnalyticsEvent>,
-        screen_routes: &[String],
-    ) -> Vec<DataPoint> {
+        events: Vec<AnalyticsEvent<'a>>,
+        screen_routes: &[ScreenRoute],
+    ) -> Vec<DataPoint<'a>> {
         screen_routes
             .iter()
             .map(|route| {
@@ -122,8 +122,8 @@ where
     fn init_was_active_each_past_period_vars(
         &self,
         metadatas: Vec<DataPointMetadata>,
-        events: Vec<AnalyticsEvent>,
-    ) -> Vec<DataPoint> {
+        events: Vec<AnalyticsEvent<'a>>,
+    ) -> Vec<DataPoint<'a>> {
         metadatas
             .iter()
             .map(|metadata| {
@@ -143,8 +143,8 @@ where
     fn init_was_active_past_n_days_vars(
         &self,
         metadatas: Vec<DataPointMetadata>,
-        events: Vec<AnalyticsEvent>,
-    ) -> Vec<DataPoint> {
+        events: Vec<AnalyticsEvent<'a>>,
+    ) -> Vec<DataPoint<'a>> {
         metadatas
             .iter()
             .map(|metadata| {
@@ -161,8 +161,8 @@ where
     fn filter_events_in_this_period(
         &self,
         metadata: DataPointMetadata,
-        events: Vec<AnalyticsEvent>,
-    ) -> Vec<AnalyticsEvent> {
+        events: Vec<AnalyticsEvent<'a>>,
+    ) -> Vec<AnalyticsEvent<'a>> {
         let start_of_period = self.get_start_of_period(metadata, None);
         self.filter_events_before_end_of_period(metadata.end, events)
             .into_iter()
@@ -196,8 +196,8 @@ where
     fn filter_events_before_end_of_period(
         &self,
         end_of_period: DateTime<Utc>,
-        events: Vec<AnalyticsEvent>,
-    ) -> Vec<AnalyticsEvent> {
+        events: Vec<AnalyticsEvent<'a>>,
+    ) -> Vec<AnalyticsEvent<'a>> {
         let midnight_end_of_period = get_midnight(end_of_period);
         events
             .into_iter()
@@ -208,13 +208,13 @@ where
     // TODO: return an iterator instead of Vec: https://xainag.atlassian.net/browse/XN-1517
     fn get_events_single_route(
         &self,
-        route: &str,
-        all_events: Vec<AnalyticsEvent>,
-    ) -> Vec<AnalyticsEvent> {
+        route: &ScreenRoute,
+        all_events: Vec<AnalyticsEvent<'a>>,
+    ) -> Vec<AnalyticsEvent<'a>> {
         all_events
             .into_iter()
             .filter(|event| {
-                if let Some(ref screen_route) = event.screen_route {
+                if let Some(screen_route) = event.screen_route {
                     screen_route == route
                 } else {
                     false
@@ -254,23 +254,23 @@ mod tests {
                 data_model::{AnalyticsEvent, AnalyticsEventType},
                 repo::MockAnalyticsEventRepo,
             },
-            common::MockRepo,
+            screen_route::{data_model::ScreenRoute, repo::MockScreenRouteRepo},
         },
     };
 
     #[test]
     fn test_init_screen_active_time_vars() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-01-01T01:01:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
-        let screen_route = "home_screen".to_string();
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let first_event = AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(12),
-            screen_route.clone(),
+            Some(&screen_route),
         );
         let all_events = vec![
             first_event.clone(),
@@ -285,37 +285,40 @@ mod tests {
             DataPoint::ScreenActiveTime(CalcScreenActiveTime::new(metadata, vec![first_event])),
             DataPoint::ScreenActiveTime(CalcScreenActiveTime::new(metadata, all_events.clone())),
         ];
-        let actual_output =
-            data_combiner.init_screen_active_time_vars(metadata, all_events, &[screen_route]);
+        let actual_output = data_combiner.init_screen_active_time_vars(
+            metadata,
+            all_events,
+            &[screen_route.clone()],
+        );
         assert_eq!(actual_output, expected_output);
     }
 
     #[test]
     fn test_init_screen_enter_count_vars() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-02-02T02:02:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
-        let screen_route = "home_screen".to_string();
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let events = vec![AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(12),
-            screen_route.clone(),
+            Some(&screen_route),
         )];
         let expected_output = vec![DataPoint::ScreenEnterCount(CalcScreenEnterCount::new(
             metadata,
             events.clone(),
         ))];
         let actual_output =
-            data_combiner.init_screen_enter_count_vars(metadata, events, &[screen_route]);
+            data_combiner.init_screen_enter_count_vars(metadata, events, &[screen_route.clone()]);
         assert_eq!(actual_output, expected_output);
     }
 
     #[test]
     fn test_init_was_active_each_past_period_vars() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-03-03T03:03:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -337,7 +340,7 @@ mod tests {
 
     #[test]
     fn test_init_was_active_past_n_days_vars() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-04-04T04:04:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -358,7 +361,7 @@ mod tests {
 
     #[test]
     fn test_filter_events_in_this_period() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-05-05T05:05:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -389,7 +392,7 @@ mod tests {
 
     #[test]
     fn test_get_start_of_period_one_day() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-01-01T00:00:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -401,7 +404,7 @@ mod tests {
 
     #[test]
     fn test_get_start_of_period_one_day_with_override() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-02-02T00:00:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -413,7 +416,7 @@ mod tests {
 
     #[test]
     fn test_get_start_of_period_one_week() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-03-03T00:00:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -425,7 +428,7 @@ mod tests {
 
     #[test]
     fn test_get_start_of_period_one_month() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_period = DateTime::parse_from_rfc3339("2021-04-04T00:00:00-00:00")
             .unwrap()
             .with_timezone(&Utc);
@@ -437,7 +440,7 @@ mod tests {
 
     #[test]
     fn text_filter_events_before_end_of_period() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let end_of_period = Utc::now();
         let event_before = AnalyticsEvent::new(
             "test1",
@@ -459,20 +462,21 @@ mod tests {
 
     #[test]
     fn test_get_events_single_route() {
-        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockRepo {});
+        let data_combiner = DataCombiner::new(MockAnalyticsEventRepo {}, MockScreenRouteRepo {});
         let timestamp = Utc::now();
-        let home_route = "home_screen".to_string();
+        let home_route = ScreenRoute::new("home_screen", timestamp + Duration::days(1));
+        let other_route = ScreenRoute::new("other_screen", timestamp + Duration::days(2));
         let home_route_event = AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::AppEvent,
             timestamp,
-            home_route.clone(),
+            Some(&home_route),
         );
         let other_route_event = AnalyticsEvent::new(
             "test2",
             AnalyticsEventType::ScreenEnter,
             timestamp,
-            "other_screen".to_string(),
+            Some(&other_route),
         );
         let all_events = vec![home_route_event.clone(), other_route_event];
         let expected_output = vec![home_route_event];

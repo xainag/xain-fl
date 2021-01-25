@@ -9,7 +9,7 @@ use crate::{
     database::analytics_event::data_model::{AnalyticsEvent, AnalyticsEventType},
 };
 
-impl CalcScreenActiveTime {
+impl<'a> CalcScreenActiveTime<'a> {
     pub fn new(metadata: DataPointMetadata, events: Vec<AnalyticsEvent>) -> CalcScreenActiveTime {
         CalcScreenActiveTime { metadata, events }
     }
@@ -29,7 +29,7 @@ impl CalcScreenActiveTime {
     }
 }
 
-impl CalculateDataPoints for CalcScreenActiveTime {
+impl<'a> CalculateDataPoints for CalcScreenActiveTime<'a> {
     fn metadata(&self) -> DataPointMetadata {
         self.metadata
     }
@@ -65,7 +65,10 @@ mod tests {
     use chrono::{DateTime, Duration, Utc};
 
     use super::*;
-    use crate::data_combination::data_points::data_point::{Period, PeriodUnit};
+    use crate::{
+        data_combination::data_points::data_point::{Period, PeriodUnit},
+        database::screen_route::data_model::ScreenRoute,
+    };
 
     #[test]
     fn test_get_screen_and_app_events() {
@@ -73,11 +76,12 @@ mod tests {
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let screen_enter_event = AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(10),
-            "screen".to_string(),
+            Some(&screen_route),
         );
         let app_event = AnalyticsEvent::new(
             "test1",
@@ -120,11 +124,12 @@ mod tests {
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let events = vec![AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(12),
-            "screen".to_string(),
+            Some(&screen_route),
         )];
         let screen_active_time = CalcScreenActiveTime::new(metadata, events);
         assert_eq!(screen_active_time.calculate(), vec![0]);
@@ -136,18 +141,19 @@ mod tests {
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let events = vec![
             AnalyticsEvent::new(
                 "test1",
                 AnalyticsEventType::ScreenEnter,
                 end_period - Duration::hours(12),
-                "screen".to_string(),
+                Some(&screen_route),
             ),
             AnalyticsEvent::new(
                 "test2",
                 AnalyticsEventType::ScreenEnter,
                 end_period - Duration::hours(15),
-                "screen".to_string(),
+                Some(&screen_route),
             ),
         ];
         let time_between_events =
@@ -165,11 +171,12 @@ mod tests {
             .unwrap()
             .with_timezone(&Utc);
         let metadata = DataPointMetadata::new(Period::new(PeriodUnit::Days, 1), end_period);
+        let screen_route = ScreenRoute::new("home_screen", end_period + Duration::days(1));
         let first = AnalyticsEvent::new(
             "test1",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(12),
-            "screen".to_string(),
+            Some(&screen_route),
         );
         let second = AnalyticsEvent::new(
             "test1",
@@ -181,13 +188,13 @@ mod tests {
             "test2",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(14),
-            "screen".to_string(),
+            Some(&screen_route),
         );
         let fourth = AnalyticsEvent::new(
             "test2",
             AnalyticsEventType::ScreenEnter,
             end_period - Duration::hours(14),
-            "screen".to_string(),
+            Some(&screen_route),
         );
         let events = vec![first.clone(), second.clone(), third.clone(), fourth.clone()];
         let time_between_events =
