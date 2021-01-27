@@ -4019,6 +4019,7 @@ dependencies = [
  "hex",
  "http",
  "influxdb",
+ "mockall",
  "num",
  "num_enum",
  "once_cell",

@@ -175,6 +175,34 @@ mod tests {
 
     #[tokio::test]
     #[serial]
+    async fn integration_store_fails() {
+        use crate::{
+            state_machine::tests::utils::enable_logging,
+            storage::{
+                traits::{MockCoordinatorStore, MockModelStore},
+                Store,
+            },
+        };
+        use anyhow::anyhow;
+
+        enable_logging();
+
+        let mut cs = MockCoordinatorStore::new();
+        cs.expect_set_coordinator_state()
+            .return_once(move |_| Err(anyhow!("Missing attribute")));
+
+        let store = Store::new(cs, MockModelStore::new());
+
+        let (state_machine, _request_tx, _) =
+            StateMachineBuilder::new(store).with_round_id(2).build();
+        assert!(state_machine.is_idle());
+
+        let state_machine = state_machine.next().await.unwrap();
+        assert!(state_machine.is_error());
+    }
+
+    #[tokio::test]
+    #[serial]
     async fn integration_idle_to_sum() {
         let mut store = init_store().await;
         let (state_machine, _request_tx, events) = StateMachineBuilder::new(store.clone())
